@@ -1,5 +1,6 @@
 package com.example
 
+import com.example.data.UsersDataSource
 import io.ktor.server.application.*
 
 fun main(args: Array<String>) {
@@ -8,8 +9,8 @@ fun main(args: Array<String>) {
 
 fun Application.module() {
 
-    val factory = MongoDatabaseFactory()
+    val usersDataSource = UsersDataSource()
 
     configureSerialization()
-    configureRouting()
+    configureRouting(usersDataSource)
 }
