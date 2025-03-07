@@ -2,6 +2,7 @@ package com.example
 
 import com.example.data.UserEntity
 import com.example.data.UsersDataSource
+import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
@@ -12,6 +13,28 @@ import java.io.File
 
 fun Application.configureRouting(usersDataSource: UsersDataSource) {
     routing {
+
+
+        get("users"){
+            val id = call.queryParameters["id"] ?: return@get call.respond(HttpStatusCode.BadRequest)
+            val user = usersDataSource.getUserById(id) ?: return@get call.respond(HttpStatusCode.NotFound)
+            call.respond(user)
+        }
+
+        get("users/filter"){
+            val age = call.queryParameters["age"]?.toIntOrNull() ?: return@get call.respond(HttpStatusCode.BadRequest)
+            val country = call.queryParameters["country"]
+            val users = usersDataSource.filterUsers(age,country ?: "")
+            call.respond(users)
+        }
+
+        get("allUsers") {
+            val page = call.queryParameters["page"]?.toIntOrNull() ?: 1
+            val users = usersDataSource.getAllUsers(page)
+            call.respond(users)
+        }
+
+
 
         post("user"){
 
