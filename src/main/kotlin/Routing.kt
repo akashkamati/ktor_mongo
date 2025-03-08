@@ -14,6 +14,26 @@ import java.io.File
 fun Application.configureRouting(usersDataSource: UsersDataSource) {
     routing {
 
+        patch("user"){
+            val user = call.receive<User>()
+            val result = usersDataSource.updateOneUser(user)
+            call.respond(mapOf("success" to result))
+        }
+
+        put("user"){
+            val user = call.receive<User>()
+            val result = usersDataSource.replaceUser(user)
+            call.respond(mapOf("success" to result))
+        }
+
+
+        patch("users"){
+            val age = call.queryParameters["age"]?.toIntOrNull() ?: 20
+            val name = call.queryParameters["name"] ?: ""
+            val result = usersDataSource.updateMultipleUsers(age,name)
+            call.respond(mapOf("success" to result))
+        }
+
 
         get("users"){
             val id = call.queryParameters["id"] ?: return@get call.respond(HttpStatusCode.BadRequest)

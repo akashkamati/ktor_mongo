@@ -4,16 +4,67 @@ import com.example.User
 import com.mongodb.client.model.Filters
 import com.mongodb.client.model.Projections
 import com.mongodb.client.model.Sorts
+import com.mongodb.client.model.UpdateOptions
+import com.mongodb.client.model.Updates
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.Serializable
+import org.bson.conversions.Bson
 
 class UsersDataSource {
 
     private val db = MongoDatabaseFactory.db
 
     private val usersCollection = db.getCollection<UserEntity>("users")
+
+
+    suspend fun updateOneUser(user: User) : Boolean{
+        val filter = Filters.eq("_id",user.id)
+
+        val updateList = mutableListOf<Bson>().apply {
+            if (user.age > 0) add(Updates.set("age",user.age))
+            if (user.name.isNotBlank()) add(Updates.set("name",user.name))
+            if (user.profession.isNotBlank()) add(Updates.set("profession",user.profession))
+            if (user.country.isNotBlank()) add(Updates.set("country",user.country))
+            if (user.email.isNotBlank()) add(Updates.set("email",user.email))
+        }
+
+        val options = UpdateOptions().upsert(true)
+
+        val updates = Updates.combine(updateList)
+        val result = usersCollection.updateOne(filter,updates,options).wasAcknowledged()
+        return result
+    }
+
+
+    suspend fun updateMultipleUsers(age: Int,name: String):Boolean{
+        val filter = Filters.gt("age",age)
+
+        val updates = Updates.set("name",name)
+
+        val result = usersCollection.updateMany(filter,updates).wasAcknowledged()
+
+        return result
+
+    }
+
+    suspend fun replaceUser(user: User) : Boolean{
+        val filter = Filters.eq("_id",user.id)
+        val entity = UserEntity(
+            id = user.id!!,
+            name = user.name,
+            age = user.age,
+            country = user.country,
+            profession = user.profession,
+            email = user.email
+        )
+        val result = usersCollection.replaceOne(filter,entity).wasAcknowledged()
+        return result
+    }
+
+
+
 
     suspend fun getUserById(id:String):User?{
         val filter = Filters.eq("_id",id)
