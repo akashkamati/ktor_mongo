@@ -14,6 +14,18 @@ import java.io.File
 fun Application.configureRouting(usersDataSource: UsersDataSource) {
     routing {
 
+        delete("user"){
+            val id = call.queryParameters["id"] ?: return@delete
+            val result = usersDataSource.deleteOneUser(id)
+            call.respond(mapOf("deletedCount" to result))
+        }
+
+        delete("users"){
+            val age = call.queryParameters["age"]?.toIntOrNull() ?: return@delete
+            val result = usersDataSource.deleteMultipleUsers(age)
+            call.respond(mapOf("deletedCount" to result))
+        }
+
         patch("user"){
             val user = call.receive<User>()
             val result = usersDataSource.updateOneUser(user)

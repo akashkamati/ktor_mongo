@@ -19,6 +19,18 @@ class UsersDataSource {
     private val usersCollection = db.getCollection<UserEntity>("users")
 
 
+    suspend fun deleteOneUser(id:String) : Long{
+        val filter = Filters.eq("_id",id)
+        val result = usersCollection.deleteOne(filter)
+        return result.deletedCount
+    }
+
+    suspend fun deleteMultipleUsers(age: Int) : Long{
+        val filter = Filters.gt("age",age)
+        val result = usersCollection.deleteMany(filter)
+        return result.deletedCount
+    }
+
     suspend fun updateOneUser(user: User) : Boolean{
         val filter = Filters.eq("_id",user.id)
 
