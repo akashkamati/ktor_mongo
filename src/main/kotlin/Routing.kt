@@ -14,6 +14,12 @@ import java.io.File
 fun Application.configureRouting(usersDataSource: UsersDataSource) {
     routing {
 
+
+        post("bulkOperations"){
+            val result = usersDataSource.bulkOperations()
+            call.respond(mapOf("result" to result))
+        }
+
         delete("user"){
             val id = call.queryParameters["id"] ?: return@delete
             val result = usersDataSource.deleteOneUser(id)

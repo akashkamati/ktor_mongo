@@ -1,9 +1,13 @@
 package com.example.data
 
 import com.example.User
+import com.mongodb.client.model.DeleteOneModel
 import com.mongodb.client.model.Filters
+import com.mongodb.client.model.InsertOneModel
 import com.mongodb.client.model.Projections
+import com.mongodb.client.model.ReplaceOneModel
 import com.mongodb.client.model.Sorts
+import com.mongodb.client.model.UpdateOneModel
 import com.mongodb.client.model.UpdateOptions
 import com.mongodb.client.model.Updates
 import kotlinx.coroutines.flow.Flow
@@ -18,6 +22,54 @@ class UsersDataSource {
 
     private val usersCollection = db.getCollection<UserEntity>("users")
 
+
+    suspend fun bulkOperations() : String{
+
+        val operations = listOf(
+            InsertOneModel(
+                UserEntity(
+                    name = "name",
+                    email = "name@ex.com",
+                    profession = "profession",
+                    age = 10,
+                    country = "country"
+                )
+            ),
+            InsertOneModel(
+                UserEntity(
+                    name = "name1",
+                    email = "name1@ex.com",
+                    profession = "profession1",
+                    age = 10,
+                    country = "country1"
+                )
+            ),
+            ReplaceOneModel(
+                Filters.eq("_id","67c92f876a110b5dd43bf9cb"),
+                UserEntity(
+                    id = "67c92f876a110b5dd43bf9cb",
+                    name = " replaced name1",
+                    email = "replaced@ex.com",
+                    profession = "replaced profession1",
+                    age = 10,
+                    country = "replaced country1"
+                )
+            ),
+            UpdateOneModel(
+                Filters.eq("_id","67c92fab6a110b5dd43bf9cd"),
+                Updates.set("name","Updated name")
+            ),
+            DeleteOneModel(
+                Filters.eq("_id","67c92fab6a110b5dd43bf9cc")
+            )
+        )
+
+        val result = usersCollection.bulkWrite(operations)
+
+        return "Inserted: ${result.insertedCount}, Updated: ${result.modifiedCount}, Deleted: ${result.deletedCount}"
+
+
+    }
 
     suspend fun deleteOneUser(id:String) : Long{
         val filter = Filters.eq("_id",id)
