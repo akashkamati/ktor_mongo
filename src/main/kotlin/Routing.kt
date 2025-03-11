@@ -11,8 +11,29 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.io.File
 
+
+@Serializable
+data class DashboardData(
+    val totalUsers:Long,
+    val countryWithUsersCount:Map<String,Long>,
+    val professionWithAvgAge:Map<String,Double>
+)
+
 fun Application.configureRouting(usersDataSource: UsersDataSource) {
     routing {
+
+        get("dashboard"){
+            val totalUsers = usersDataSource.getTotalCount()
+            val countryWithUser = usersDataSource.getCountryWithUsersCount()
+            val professionWithAvgAge = usersDataSource.getAverageAgeByProfession()
+            val data = DashboardData(
+                totalUsers = totalUsers,
+                countryWithUsersCount = countryWithUser,
+                professionWithAvgAge = professionWithAvgAge
+            )
+            call.respond(data)
+
+        }
 
 
         post("bulkOperations"){

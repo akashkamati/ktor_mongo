@@ -1,6 +1,8 @@
 package com.example.data
 
 import com.example.User
+import com.mongodb.client.model.Accumulators
+import com.mongodb.client.model.Aggregates
 import com.mongodb.client.model.DeleteOneModel
 import com.mongodb.client.model.Filters
 import com.mongodb.client.model.InsertOneModel
@@ -13,14 +15,61 @@ import com.mongodb.client.model.Updates
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.toList
 import kotlinx.serialization.Serializable
+import org.bson.codecs.pojo.annotations.BsonId
 import org.bson.conversions.Bson
+
+data class CountResult(val count:Long)
+data class CountryResult(val count:Long,@BsonId val country: String)
+data class ProfessionAgeAvgResult(val averageAge:Double,@BsonId val profession: String)
 
 class UsersDataSource {
 
     private val db = MongoDatabaseFactory.db
 
     private val usersCollection = db.getCollection<UserEntity>("users")
+
+    suspend fun getTotalCount() : Long{
+        val pipeline = listOf(Aggregates.count())
+        val result = usersCollection.aggregate<CountResult>(pipeline).firstOrNull()
+
+        return result?.count ?: 0
+
+    }
+
+    suspend fun getAverageAgeByProfession():Map<String,Double>{
+        val pipeline = listOf(
+            Aggregates.group("\$profession",Accumulators.avg("averageAge","\$age"))
+        )
+
+        val result = usersCollection.aggregate<ProfessionAgeAvgResult>(pipeline).toList()
+
+        val responseData = mutableMapOf<String,Double>()
+
+        result.forEach {
+            responseData[it.profession] = it.averageAge
+        }
+        return responseData
+
+    }
+
+    suspend fun getCountryWithUsersCount():Map<String,Long>{
+
+        val pipeline = listOf(
+            Aggregates.group("\$country",Accumulators.sum("count",1))
+        )
+
+        val result = usersCollection.aggregate<CountryResult>(pipeline).toList()
+
+        val responseData = mutableMapOf<String,Long>()
+        result.forEach {
+            responseData[it.country] = it.count
+        }
+        return responseData
+
+
+    }
 
 
     suspend fun bulkOperations() : String{
