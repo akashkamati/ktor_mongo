@@ -22,6 +22,13 @@ data class DashboardData(
 fun Application.configureRouting(usersDataSource: UsersDataSource) {
     routing {
 
+        get("users/search"){
+            val query = call.queryParameters["query"] ?: return@get
+            val page = call.queryParameters["page"]?.toIntOrNull() ?: 1
+            val result = usersDataSource.getResultForQuery(query,page)
+            call.respond(result)
+        }
+
         get("dashboard"){
             val totalUsers = usersDataSource.getTotalCount()
             val countryWithUser = usersDataSource.getCountryWithUsersCount()

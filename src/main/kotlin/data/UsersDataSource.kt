@@ -1,17 +1,7 @@
 package com.example.data
 
 import com.example.User
-import com.mongodb.client.model.Accumulators
-import com.mongodb.client.model.Aggregates
-import com.mongodb.client.model.DeleteOneModel
-import com.mongodb.client.model.Filters
-import com.mongodb.client.model.InsertOneModel
-import com.mongodb.client.model.Projections
-import com.mongodb.client.model.ReplaceOneModel
-import com.mongodb.client.model.Sorts
-import com.mongodb.client.model.UpdateOneModel
-import com.mongodb.client.model.UpdateOptions
-import com.mongodb.client.model.Updates
+import com.mongodb.client.model.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
@@ -20,15 +10,50 @@ import kotlinx.serialization.Serializable
 import org.bson.codecs.pojo.annotations.BsonId
 import org.bson.conversions.Bson
 
-data class CountResult(val count:Long)
-data class CountryResult(val count:Long,@BsonId val country: String)
-data class ProfessionAgeAvgResult(val averageAge:Double,@BsonId val profession: String)
-
 class UsersDataSource {
 
     private val db = MongoDatabaseFactory.db
 
     private val usersCollection = db.getCollection<UserEntity>("users")
+
+
+
+    fun getResultForQuery(query:String,page: Int) : Flow<User>{
+        val filter = Filters.text(query)
+        val pageSize = 10
+        val skip = (page-1)*pageSize
+        val result = usersCollection.find(filter)
+            .skip(skip)
+            .limit(pageSize)
+            .map { it.toUser() }
+        return result
+    }
+
+    suspend fun createUserTextIndex(){
+        usersCollection.createIndex(
+            Indexes.compoundIndex(
+                Indexes.text("_id"),
+                Indexes.text("name"),
+                Indexes.text("country"),
+                Indexes.text("profession"),
+                Indexes.text("email")
+            ),
+
+            IndexOptions().name("user_text_index")
+        )
+
+//        usersCollection.dropIndex("user_text_index")
+//        usersCollection.dropIndex("*")
+    }
+
+
+
+
+
+
+
+
+
 
     suspend fun getTotalCount() : Long{
         val pipeline = listOf(Aggregates.count())
@@ -226,6 +251,10 @@ class UsersDataSource {
     }
 
 }
+
+data class CountResult(val count:Long)
+data class CountryResult(val count:Long,@BsonId val country: String)
+data class ProfessionAgeAvgResult(val averageAge:Double,@BsonId val profession: String)
 
 @Serializable
 data class UserResult(
